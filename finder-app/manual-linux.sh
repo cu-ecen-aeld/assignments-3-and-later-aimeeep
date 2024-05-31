@@ -106,17 +106,17 @@ sudo mknod -m 666 dev/console c 5 1
 
 
 # TODO: Clean and build the writer utility
-FINDER_APP=/home/apaung/aimeepaung/assignment-2-aimeeep/finder-app
-cd ${FINDER_APP}
-sudo chmod 777 ${FINDER_APP}
+
+cd ${FINDER_APP_DIR}
+sudo chmod 777 ${FINDER_APP_DIR}
 sudo make clean
 make CROSS_COMPILE=${CROSS_COMPILE}
 
 # TODO: Copy the finder related scripts and executables to the /home directory
 # on the target rootfs
-sudo cp ${FINDER_APP}/finder.sh ${FINDER_APP}/finder-test.sh ${FINDER_APP}/autorun-qemu.sh ${OUTDIR}/rootfs/home
+sudo cp ${FINDER_APP_DIR}/finder.sh ${FINDER_APP_DIR}/finder-test.sh ${FINDER_APP_DIR}/autorun-qemu.sh ${OUTDIR}/rootfs/home
 sudo mkdir -p ${OUTDIR}/rootfs/home/conf
-sudo cp ${FINDER_APP}/conf/*.txt ${OUTDIR}/rootfs/home/conf
+sudo cp ${FINDER_APP_DIR}/conf/*.txt ${OUTDIR}/rootfs/home/conf
 
 # TODO: Chown the root directory
 cd ${OUTDIR}/rootfs
