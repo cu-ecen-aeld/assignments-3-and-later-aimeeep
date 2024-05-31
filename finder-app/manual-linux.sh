@@ -83,19 +83,21 @@ sudo make distclean
 sudo make defconfig
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 make CROSS_COMPILE="$CROSS_COMPILE" CONFIG_PREFIX="${OUTDIR}/rootfs" install
+cd ${OUTDIR}/rootfs
 
 echo "Library dependencies"
-#${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
-#${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
+${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
+${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
-#PROGRAM_INTERPRETER=$( ${CROSS_COMPILE}readelf -a ${OUTDIR}/rootfs/bin/busybox | grep "program interpreter"| awk '{print $NF}' )
-#SHARED_LIBS=$( ${CROSS_COMPILE}readelf -a ${OUTDIR}/rootfs/bin/busybox | grep "Shared library"| awk '{print $NF}' )
+SYSROOT=$(aarch64-none-linux-gnu-gcc -print-sysroot)
+dep1=$(find $SYSROOT -name "libm.so.6")
+dep2=$(find $SYSROOT -name "libresolv.so.2")
+dep3=$(find $SYSROOT -name "libc.so.6")
+dep4=$(find $SYSROOT -name "ld-linux-aarch64.so.1")
 
-cp /home/apaung/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib/ld-linux-aarch64.so.1  ${OUTDIR}/rootfs/lib/
-cp /home/apaung/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libresolv.so.2  ${OUTDIR}/rootfs/lib64/
-cp /home/apaung/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libm.so.6  ${OUTDIR}/rootfs/lib64/
-cp /home/apaung/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libc.so.6  ${OUTDIR}/rootfs/lib64/
+cp ${dep1} ${dep2} ${dep3} ${OUTDIR}/rootfs/lib64
+cp ${dep4} ${OUTDIR}/rootfs/lib
 
 # TODO: Make device nodes
 cd "${OUTDIR}/rootfs"
