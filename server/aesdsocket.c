@@ -62,8 +62,6 @@ static void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc, char** argv)
 {
-
-	ssize_t valread;
     	openlog("aesdsocket.log", LOG_PID, LOG_USER);
     	syslog(LOG_DEBUG, "Starting aesdserver");	
 	signal(SIGINT, handle_signal);
