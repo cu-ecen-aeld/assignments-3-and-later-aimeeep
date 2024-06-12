@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <syslog.h>
@@ -10,7 +9,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
-
+#include <errno.h>
 #define port_num 9000
 #define FILE_PATH "/var/tmp/aesdsocketdata"
 
@@ -35,6 +34,23 @@ void handle_signal(int signal)
     }
 }
 
+static void daemonize()
+{
+	 pid_t pid;
+	 pid = fork(); // Fork off the parent process
+	 if (pid < 0) {
+	   exit(EXIT_FAILURE);
+	 }
+	 if (pid > 0) {
+	   exit(EXIT_SUCCESS);
+	 }
+
+    	//add signal handlers again
+	signal(SIGINT, handle_signal);
+	signal(SIGTERM, handle_signal);
+	syslog(LOG_DEBUG, "Registered daemon signal handler");
+}
+
 static void *get_in_addr(struct sockaddr *sa)
 {
     if (sa->sa_family == AF_INET) {
@@ -44,7 +60,8 @@ static void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int main(){
+int main(int argc, char** argv)
+{
 
 	ssize_t valread;
     	openlog("aesdsocket.log", LOG_PID, LOG_USER);
@@ -52,8 +69,9 @@ int main(){
 	signal(SIGINT, handle_signal);
     	signal(SIGTERM, handle_signal);
     
-	if( socket_server = socket(PF_INET,SOCK_STREAM,0) < 0) {
-		syslog(LOG_DEBUG, "Socket failed.");	
+	if( (socket_server = socket(PF_INET,SOCK_STREAM,0)) < 0) 
+	{
+		syslog(LOG_DEBUG, "Socket failed. errno: %d", errno);	
 		return -1;
 	}
         
@@ -64,25 +82,48 @@ int main(){
 	address_client.sin_port=htons(port_num);
 	memset(&(address_client.sin_zero), '\0', 8);
 	
-	if(bind(socket_server,(struct sockaddr *)&address_client,sizeof(address_client)) < 0) {
-		syslog(LOG_DEBUG, "Bind failed.");
+	if(bind(socket_server,(struct sockaddr *)&address_client,sizeof(address_client)) < 0) 
+	{
+		syslog(LOG_DEBUG, "Bind failed. errno: %d", errno);
+		return -1;
+	}
+
+	//check if program should be deamonized
+	if(argc ==2)
+	{
+		if(strcmp(argv[1], "-d") == 0)
+		{
+		    syslog(LOG_DEBUG, "Turning into a deamon");
+		    daemonize();
+		}
+	}	
+	
+	if(listen(socket_server,3) < 0) 
+	{
+		syslog(LOG_DEBUG, "Listen failed. errno: %d", errno);
 		return -1;
 	}
 	
-	
-	if(listen(socket_server,3) < 0) return -1;
-	
 	server_fd = fopen("/var/tmp/aesdsocketdata","w");
-	if(server_fd == NULL) {return -1;}
+	if(server_fd == NULL) 
+	{
+		syslog(LOG_DEBUG, "File open failed. errno: %d", errno);	
+		return -1;
+	}
 	fclose(server_fd);
 	
 	struct sockaddr_storage client_storage;
 	socklen_t client_storage_size = sizeof(client_storage);
 	char client_ip[INET6_ADDRSTRLEN];
 	
-	while(true) {
-		if(socket_client = accept(socket_server, (struct sockaddr*)&client_storage,
-		          &client_storage_size) < 0) return -1;
+	while(true) 
+	{
+		if( (socket_client = accept(socket_server, (struct sockaddr*)&client_storage,
+		          &client_storage_size)) < 0) 
+		{
+			syslog(LOG_DEBUG, "Accept failed. errno: %d", errno);
+			return -1;
+		}
 		          
 		inet_ntop(client_storage.ss_family,get_in_addr((struct sockaddr *)&client_storage), client_ip, sizeof client_ip);
         	syslog(LOG_DEBUG, "Accepted connection from %s", client_ip);
@@ -90,13 +131,15 @@ int main(){
 		char buffer[512];
 		memset(buffer, 0, sizeof(buffer));
 		server_fd = fopen("/var/tmp/aesdsocketdata","a");
-		if (server_fd == NULL){
-			syslog(LOG_DEBUG, "File cannot be opened");
+		if (server_fd == NULL)
+		{
+			syslog(LOG_DEBUG, "File cannot be opened. errno: %d", errno);
 			return -1;
 		}
 		bool end = false;
 		int byte_num;
-		while(!end){
+		while(!end)
+		{
 		    byte_num = recv(socket_client, buffer, sizeof(buffer), 0);
 		    syslog(LOG_DEBUG, "Received %d bytes: %s", byte_num, buffer);
 
@@ -111,8 +154,7 @@ int main(){
 		}
 		fclose(server_fd);
 		
-		server_fd = fopen("/var/tmp/aesdsocketdata","r");
-		
+		server_fd = fopen("/var/tmp/aesdsocketdata","r");		
 		end = false;
 		memset(buffer,0,sizeof(buffer));
 		while (!end) {
@@ -126,15 +168,12 @@ int main(){
 		        syslog(LOG_DEBUG, "File end sent");
 		    }
 		    memset(buffer,0,sizeof(buffer));
-		}
+		}     
+	}	
         close(socket_client);
         close(socket_server);  
         fclose(server_fd);
-        closelog();      
-	}	
-
-        
-
+        closelog(); 
         return 0;
                    
 }
