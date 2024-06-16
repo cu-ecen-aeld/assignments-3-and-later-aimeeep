@@ -11,8 +11,11 @@ CFLAGS  = -Wall -Werror -g -O0
 # the build target executable:
 TARGET = aesdsocket
 
+all:$(TARGET).o
+	$(CC) -o $(TARGET) $(TARGET).o 
+	
 $(TARGET): $(TARGET).c
 	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(TARGET) $(TARGET).o
