@@ -1,16 +1,17 @@
 #! /bin/sh
-case "$1" ub
+
+case "$1" in
 	start)
 		echo "Starting aesdsocket"
-		start-stop-daemon -S -n aesdsocket -a /usr/bin/aesdsocket -- -d
+		start-stop-daemon -S -n aesdsocket -a /usr/bin/aesdsocket -d
 		;;
 	stop)
-		echo "Stopping aesdsocket"
-		start-stop-daemon -K -n aesdsocket
+		echo "Stopping aesdserver"
+		start-stop-daemon -K aesdsocket
 		;;
 	*)
 		echo "Usage: $0 {start|stop}"
-	exit1
+	exit 1
 esac
 
 exit 0

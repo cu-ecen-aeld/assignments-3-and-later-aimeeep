@@ -12,7 +12,7 @@
 #include <errno.h>
 #define port_num 9000
 #define FILE_PATH "/var/tmp/aesdsocketdata"
-
+#define BUFFER_SIZE 512
 
 int socket_server;
 int socket_client;
@@ -126,7 +126,7 @@ int main(int argc, char** argv)
 		inet_ntop(client_storage.ss_family,get_in_addr((struct sockaddr *)&client_storage), client_ip, sizeof client_ip);
         	syslog(LOG_DEBUG, "Accepted connection from %s", client_ip);
 		
-		char buffer[512];
+		char buffer[BUFFER_SIZE];
 		memset(buffer, 0, sizeof(buffer));
 		server_fd = fopen("/var/tmp/aesdsocketdata","a");
 		if (server_fd == NULL)
@@ -138,17 +138,21 @@ int main(int argc, char** argv)
 		int byte_num;
 		while(!end)
 		{
-		    byte_num = recv(socket_client, buffer, sizeof(buffer), 0);
-		    syslog(LOG_DEBUG, "Received %d bytes: %s", byte_num, buffer);
+		    byte_num = recv(socket_client, buffer, BUFFER_SIZE - 1, 0);
+		    char received[BUFFER_SIZE];
+		    strcpy(received, buffer); // remove extra null characters
+		    syslog(LOG_DEBUG, "Received %d bytes: %s", byte_num, received);
 
-		    int ret = fwrite(buffer, sizeof(char), strlen(buffer), server_fd);
-		    memset(buffer,0,sizeof(buffer));
-		    syslog(LOG_DEBUG, "Wrote %d bytes: %s", ret, buffer);
+		    int ret = fwrite(received, sizeof(char), strlen(received), server_fd);
+	
+		    syslog(LOG_DEBUG, "Wrote %d bytes: %s", ret, received);
 
-		    if (strcmp(&buffer[byte_num], "\n") && byte_num != 512){
+		    if (strstr(received, "\n")){
 		        end = true;
 		        syslog(LOG_DEBUG, "Package end received");
 		    }
+		        memset(&received[0], '\0', sizeof(received));
+            		memset(&buffer[0], '\0', sizeof(buffer));
 		}
 		fclose(server_fd);
 		
@@ -166,7 +170,8 @@ int main(int argc, char** argv)
 		        syslog(LOG_DEBUG, "File end sent");
 		    }
 		    memset(buffer,0,sizeof(buffer));
-		}     
+		} 
+		fclose(server_fd);    
 	}	
         close(socket_client);
         close(socket_server);  
