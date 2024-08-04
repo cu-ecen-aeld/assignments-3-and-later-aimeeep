@@ -12,10 +12,10 @@ CFLAGS  = -Wall -Werror -g -O0
 TARGET = aesdsocket
 
 all:$(TARGET).o
-	$(CC) -o $(TARGET) $(TARGET).o 
+	$(CC) -o $(TARGET) $(TARGET).o -pthread
 	
 $(TARGET): $(TARGET).c
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c
+	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c -pthread
 
 clean:
 	$(RM) $(TARGET) $(TARGET).o
