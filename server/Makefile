@@ -1,21 +1,14 @@
-# the compiler: gcc for C program, define as g++ for C++
-CC = $(CROSS_COMPILE)gcc
+SRC := aesdsocket.c
+TARGET ?= aesdsocket
+CFLAGS ?= -g -Wall -Werror
+LDFLAGS ?= -pthread
+CC ?= $(CROSS_COMPILE)gcc
 
-# compiler flags:
-#  -g    	adds debugging information to the executable file
-#  -Wall 	turns on most, but not all, compiler warnings
-#  -Werror 	make the specified warning into an error
-#  -O0 	disable optimizations
-CFLAGS  = -Wall -Werror -g -O0
+make: $(SRC)
+	$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) -o $(TARGET) $(SRC) $(LDFLAGS)
 
-# the build target executable:
-TARGET = aesdsocket
-
-all:$(TARGET).o
-	$(CC) -o $(TARGET) $(TARGET).o -pthread
-	
-$(TARGET): $(TARGET).c
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c -pthread
+all: 
+	$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) -o $(TARGET) $(SRC) $(LDFLAGS)
 
 clean:
-	$(RM) $(TARGET) $(TARGET).o
+	-rm -f *.o $(TARGET)
